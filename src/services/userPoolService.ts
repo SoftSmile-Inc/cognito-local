@@ -8,7 +8,7 @@ import {
   UserPoolType,
   UserStatusType,
 } from "aws-sdk/clients/cognitoidentityserviceprovider";
-import { InvalidParameterError } from "../errors";
+import { InvalidParameterError, UserNotFoundError } from "../errors";
 import { AppClient } from "./appClient";
 import { Clock } from "./clock";
 import { Context } from "./context";
@@ -99,6 +99,19 @@ export interface User {
   RefreshTokens: string[];
 }
 
+export interface PoolDomain {
+  /**
+   * The domain string. For custom domains, this is the fully-qualified domain name, such
+   * as <c>auth.example.com</c>. For Amazon Cognito prefix domains, this is the prefix
+   * alone, such as <c>auth</c>.
+   */
+  Domain: string;
+  /**
+   * The user pool ID for the user pool.
+   */
+  UserPoolId: string;
+}
+
 export interface Group {
   /**
    * The name of the group.
@@ -142,6 +155,8 @@ export interface UserPoolService {
   addUserToGroup(ctx: Context, group: Group, user: User): Promise<void>;
   saveAppClient(ctx: Context, appClient: AppClient): Promise<void>;
   deleteAppClient(ctx: Context, appClient: AppClient): Promise<void>;
+  savePoolDomain(ctx: Context, poolDomain: PoolDomain): Promise<void>;
+  deletePoolDomain(ctx: Context, poolDomain: PoolDomain): Promise<void>;
   deleteGroup(ctx: Context, group: Group): Promise<void>;
   deleteUser(ctx: Context, user: User): Promise<void>;
   getGroupByGroupName(ctx: Context, groupName: string): Promise<Group | null>;
@@ -165,18 +180,21 @@ export interface UserPoolService {
     refreshToken: string,
     user: User
   ): Promise<void>;
+  removeRefreshToken(ctx: Context, refreshToken: string): Promise<void>;
 }
 
 export interface UserPoolServiceFactory {
   create(
     ctx: Context,
     clientsDataStore: DataStore,
+    domainsDataStore: DataStore,
     defaultOptions: UserPool
   ): Promise<UserPoolService>;
 }
 
 export class UserPoolServiceImpl implements UserPoolService {
   private readonly clientsDataStore: DataStore;
+  private readonly domainsDataStore: DataStore;
   private readonly clock: Clock;
   private readonly dataStore: DataStore;
 
@@ -188,11 +206,13 @@ export class UserPoolServiceImpl implements UserPoolService {
 
   public constructor(
     clientsDataStore: DataStore,
+    domainsDataStore: DataStore,
     clock: Clock,
     dataStore: DataStore,
     config: UserPool
   ) {
     this.clientsDataStore = clientsDataStore;
+    this.domainsDataStore = domainsDataStore;
     this._options = config;
     this.clock = clock;
     this.dataStore = dataStore;
@@ -219,6 +239,29 @@ export class UserPoolServiceImpl implements UserPoolService {
       "UserPoolServiceImpl.deleteAppClient"
     );
     await this.clientsDataStore.delete(ctx, ["Clients", appClient.ClientId]);
+  }
+
+  public async savePoolDomain(
+    ctx: Context,
+    poolDomain: PoolDomain
+  ): Promise<void> {
+    ctx.logger.debug("UserPoolServiceImpl.savePoolDomain");
+    await this.domainsDataStore.set(
+      ctx,
+      ["Domains", poolDomain.Domain],
+      poolDomain
+    );
+  }
+
+  public async deletePoolDomain(
+    ctx: Context,
+    poolDomain: PoolDomain
+  ): Promise<void> {
+    ctx.logger.debug(
+      { clientId: poolDomain.Domain },
+      "UserPoolServiceImpl.deletePoolDomain"
+    );
+    await this.domainsDataStore.delete(ctx, ["Domains", poolDomain.Domain]);
   }
 
   public async deleteGroup(ctx: Context, group: Group): Promise<void> {
@@ -486,6 +529,32 @@ export class UserPoolServiceImpl implements UserPoolService {
       RefreshTokens: refreshTokens,
     });
   }
+
+  async removeRefreshToken(ctx: Context, refreshToken: string): Promise<void> {
+    ctx.logger.debug(
+      { refreshToken },
+      "UserPoolServiceImpl.removeRefreshToken",
+      refreshToken
+    );
+    const user = await this.getUserByRefreshToken(ctx, refreshToken);
+    if (!user)
+      throw new UserNotFoundError(
+        `User with token '${refreshToken}' is not found`
+      );
+
+    const refreshTokens = Array.isArray(user.RefreshTokens)
+      ? user.RefreshTokens
+      : [];
+    const index = refreshTokens.indexOf(refreshToken, 0);
+    if (index === -1) {
+      refreshTokens.splice(index, 1);
+      return;
+    }
+    await this.saveUser(ctx, {
+      ...user,
+      RefreshTokens: refreshTokens,
+    });
+  }
 }
 
 export class UserPoolServiceFactoryImpl implements UserPoolServiceFactory {
@@ -500,6 +569,7 @@ export class UserPoolServiceFactoryImpl implements UserPoolServiceFactory {
   public async create(
     ctx: Context,
     clientsDataStore: DataStore,
+    domainsDataStore: DataStore,
     defaultOptions: UserPool
   ): Promise<UserPoolService> {
     const id = defaultOptions.Id;
@@ -518,6 +588,7 @@ export class UserPoolServiceFactoryImpl implements UserPoolServiceFactory {
 
     return new UserPoolServiceImpl(
       clientsDataStore,
+      domainsDataStore,
       this.clock,
       dataStore,
       config

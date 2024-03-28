@@ -51,10 +51,12 @@ describe("Cognito Service", () => {
       mockUserPoolServiceFactory.create.mockResolvedValue(mockUserPool);
 
       const clientsDataStore = newMockDataStore();
+      const domainsDataStore = newMockDataStore();
 
       const cognitoClient = new CognitoServiceImpl(
         "data-directory",
         clientsDataStore,
+        domainsDataStore,
         new ClockFake(new Date()),
         { UsernameAttributes: [] },
         mockUserPoolServiceFactory
@@ -65,6 +67,7 @@ describe("Cognito Service", () => {
       expect(mockUserPoolServiceFactory.create).toHaveBeenCalledWith(
         TestContext,
         clientsDataStore,
+        domainsDataStore,
         { ...USER_POOL_AWS_DEFAULTS, Id: "testing", UsernameAttributes: [] }
       );
       expect(userPool).toEqual(mockUserPool);
@@ -76,11 +79,13 @@ describe("Cognito Service", () => {
       mockUserPoolServiceFactory.create.mockResolvedValue(mockUserPool);
 
       const clientsDataStore = newMockDataStore();
+      const domainsDataStore = newMockDataStore();
       clientsDataStore.get.mockResolvedValue(null);
 
       const cognitoClient = new CognitoServiceImpl(
         "data-directory",
         clientsDataStore,
+        domainsDataStore,
         new ClockFake(new Date()),
         { UsernameAttributes: [] },
         mockUserPoolServiceFactory
@@ -97,6 +102,7 @@ describe("Cognito Service", () => {
       mockUserPoolServiceFactory.create.mockResolvedValue(mockUserPool);
 
       const clientsDataStore = newMockDataStore();
+      const domainsDataStore = newMockDataStore();
       clientsDataStore.get.mockResolvedValue({
         UserPoolId: "userPoolId",
       });
@@ -104,6 +110,7 @@ describe("Cognito Service", () => {
       const cognitoClient = new CognitoServiceImpl(
         "data-directory",
         clientsDataStore,
+        domainsDataStore,
         new ClockFake(new Date()),
         { UsernameAttributes: [] },
         mockUserPoolServiceFactory
@@ -121,6 +128,7 @@ describe("Cognito Service", () => {
       expect(mockUserPoolServiceFactory.create).toHaveBeenCalledWith(
         TestContext,
         clientsDataStore,
+        domainsDataStore,
         { ...USER_POOL_AWS_DEFAULTS, Id: "userPoolId", UsernameAttributes: [] }
       );
       expect(userPool).toEqual(mockUserPool);

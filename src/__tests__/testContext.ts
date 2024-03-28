@@ -3,4 +3,5 @@ import { MockLogger } from "./mockLogger";
 
 export const TestContext: Context = {
   logger: MockLogger,
+  hostWithProtocol: "http://example.com",
 };

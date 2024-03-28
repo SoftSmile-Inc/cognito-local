@@ -18,6 +18,7 @@ import { Router } from "./Router";
 import { loadConfig } from "./config";
 import { createServer, Server } from "./server";
 import { CryptoService } from "../services/crypto";
+import { TokenRequestHandle } from "../targets/oauth2/tokenTarget";
 
 export const createDefaultServer = async (
   logger: pino.Logger
@@ -63,24 +64,24 @@ export const createDefaultServer = async (
     new CryptoService(config.KMSConfig)
   );
 
+  const messages = new MessagesService(
+    triggers,
+    new MessageDeliveryService(new ConsoleMessageSender())
+  );
+  const services = {
+    clock,
+    cognito: cognitoClient,
+    config,
+    messages: messages,
+    otp,
+    tokenGenerator: new JwtTokenGenerator(clock, triggers, config.TokenConfig),
+    triggers,
+  };
   return createServer(
-    Router({
-      clock,
-      cognito: cognitoClient,
-      config,
-      messages: new MessagesService(
-        triggers,
-        new MessageDeliveryService(new ConsoleMessageSender())
-      ),
-      otp,
-      tokenGenerator: new JwtTokenGenerator(
-        clock,
-        triggers,
-        config.TokenConfig
-      ),
-      triggers,
-    }),
+    cognitoClient,
+    Router(services),
     logger,
+    new TokenRequestHandle(services),
     {
       development: !!process.env.COGNITO_LOCAL_DEVMODE,
     }

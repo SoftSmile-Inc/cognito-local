@@ -194,7 +194,12 @@ export class JwtTokenGenerator implements TokenGenerator {
       idToken = applyTokenOverrides(idToken, result.claimsOverrideDetails);
     }
 
-    const issuer = `${this.tokenConfig.IssuerDomain}/${userPoolClient.UserPoolId}`;
+    // Use the issuer domain from the token config if it's set, otherwise use the host from the context
+    const issuer = `${
+      this.tokenConfig.IssuerDomain
+        ? this.tokenConfig.IssuerDomain
+        : ctx.hostWithProtocol
+    }/${userPoolClient.UserPoolId}`;
 
     return {
       AccessToken: jwt.sign(accessToken, PrivateKey.pem, {

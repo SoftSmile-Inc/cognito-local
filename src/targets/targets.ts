@@ -19,6 +19,7 @@ import { ConfirmSignUp } from "./confirmSignUp";
 import { CreateGroup } from "./createGroup";
 import { CreateUserPool } from "./createUserPool";
 import { CreateUserPoolClient } from "./createUserPoolClient";
+import { CreateUserPoolDomain } from "./createUserPoolDomain";
 import { DeleteGroup } from "./deleteGroup";
 import { DeleteUser } from "./deleteUser";
 import { DeleteUserAttributes } from "./deleteUserAttributes";
@@ -67,6 +68,7 @@ export const Targets = {
   CreateGroup,
   CreateUserPool,
   CreateUserPoolClient,
+  CreateUserPoolDomain,
   DeleteGroup,
   DeleteUser,
   DeleteUserAttributes,

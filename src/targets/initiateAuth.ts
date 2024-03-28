@@ -90,10 +90,9 @@ const verifyMfaChallenge = async (
   };
 };
 
-const verifyPasswordChallenge = async (
+export const verifyPasswordChallenge = async (
   ctx: Context,
   user: User,
-  req: InitiateAuthRequest,
   userPool: UserPoolService,
   userPoolClient: AppClient,
   services: InitiateAuthServices
@@ -132,7 +131,7 @@ const newPasswordChallenge = (user: User): InitiateAuthResponse => ({
   Session: v4(),
 });
 
-const userPasswordAuthFlow = async (
+export const userPasswordAuthFlow = async (
   ctx: Context,
   req: InitiateAuthRequest,
   userPool: UserPoolService,
@@ -206,17 +205,10 @@ const userPasswordAuthFlow = async (
     });
   }
 
-  return verifyPasswordChallenge(
-    ctx,
-    user,
-    req,
-    userPool,
-    userPoolClient,
-    services
-  );
+  return verifyPasswordChallenge(ctx, user, userPool, userPoolClient, services);
 };
 
-const refreshTokenAuthFlow = async (
+export const refreshTokenAuthFlow = async (
   ctx: Context,
   req: InitiateAuthRequest,
   userPool: UserPoolService,

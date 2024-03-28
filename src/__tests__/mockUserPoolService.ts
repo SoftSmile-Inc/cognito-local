@@ -23,6 +23,9 @@ export const newMockUserPoolService = (
   saveUser: jest.fn(),
   storeRefreshToken: jest.fn(),
   updateOptions: jest.fn(),
+  savePoolDomain: jest.fn(),
+  deletePoolDomain: jest.fn(),
+  removeRefreshToken: jest.fn(),
 });
 
 export const newMockUserPoolServiceFactory = (

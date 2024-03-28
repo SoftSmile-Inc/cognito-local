@@ -31,10 +31,7 @@ export const DefaultConfig: Config = {
   UserPoolDefaults: {
     UsernameAttributes: ["email"],
   },
-  TokenConfig: {
-    // TODO: this needs to match the actual host/port we started the server on
-    IssuerDomain: "http://localhost:9229",
-  },
+  TokenConfig: {},
   KMSConfig: {
     credentials: {
       accessKeyId: "local",

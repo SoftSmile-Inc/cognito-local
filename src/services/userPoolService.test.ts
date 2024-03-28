@@ -25,12 +25,13 @@ describe("UserPoolServiceFactory", () => {
     const mockDataStoreFactory = newMockDataStoreFactory(newMockDataStore());
 
     const clientsDataStore = newMockDataStore();
+    const domainsDataStore = newMockDataStore();
     const factory = new UserPoolServiceFactoryImpl(
       new ClockFake(new Date()),
       mockDataStoreFactory
     );
 
-    await factory.create(TestContext, clientsDataStore, {
+    await factory.create(TestContext, clientsDataStore, domainsDataStore, {
       Id: "local",
       UsernameAttributes: [],
     });
@@ -48,6 +49,7 @@ describe("UserPoolServiceFactory", () => {
 
 describe("User Pool Service", () => {
   let mockClientsDataStore: jest.Mocked<DataStore>;
+  const domainDataStore = newMockDataStore();
   const currentDate = new Date(2020, 1, 2, 3, 4, 5);
 
   let clock: ClockFake;
@@ -67,6 +69,7 @@ describe("User Pool Service", () => {
 
       const userPool = new UserPoolServiceImpl(
         mockClientsDataStore,
+        domainDataStore,
         clock,
         ds,
         {
@@ -102,6 +105,7 @@ describe("User Pool Service", () => {
 
       const userPool = new UserPoolServiceImpl(
         mockClientsDataStore,
+        domainDataStore,
         clock,
         ds,
         {
@@ -128,6 +132,7 @@ describe("User Pool Service", () => {
 
       const userPool = new UserPoolServiceImpl(
         mockClientsDataStore,
+        domainDataStore,
         clock,
         ds,
         {
@@ -154,6 +159,7 @@ describe("User Pool Service", () => {
 
       const userPool = new UserPoolServiceImpl(
         clientsDs,
+        domainDataStore,
         clock,
         newMockDataStore(),
         {
@@ -179,6 +185,7 @@ describe("User Pool Service", () => {
 
       const userPool = new UserPoolServiceImpl(
         mockClientsDataStore,
+        domainDataStore,
         clock,
         ds,
         {
@@ -212,6 +219,7 @@ describe("User Pool Service", () => {
 
       const userPool = new UserPoolServiceImpl(
         mockClientsDataStore,
+        domainDataStore,
         clock,
         ds,
         {
@@ -255,6 +263,7 @@ describe("User Pool Service", () => {
 
       const userPool = new UserPoolServiceImpl(
         mockClientsDataStore,
+        domainDataStore,
         clock,
         ds,
         {
@@ -323,6 +332,7 @@ describe("User Pool Service", () => {
 
       userPool = new UserPoolServiceImpl(
         mockClientsDataStore,
+        domainDataStore,
         clock,
         ds,
         options
@@ -393,6 +403,7 @@ describe("User Pool Service", () => {
 
           userPool = new UserPoolServiceImpl(
             mockClientsDataStore,
+            domainDataStore,
             clock,
             ds,
             options
@@ -496,10 +507,16 @@ describe("User Pool Service", () => {
 
         return Promise.resolve(null);
       });
-      userPool = new UserPoolServiceImpl(mockClientsDataStore, clock, ds, {
-        Id: "local",
-        UsernameAttributes: [],
-      });
+      userPool = new UserPoolServiceImpl(
+        mockClientsDataStore,
+        domainDataStore,
+        clock,
+        ds,
+        {
+          Id: "local",
+          UsernameAttributes: [],
+        }
+      );
     });
 
     it("returns existing users", async () => {
@@ -581,6 +598,7 @@ describe("User Pool Service", () => {
 
       const userPool = new UserPoolServiceImpl(
         mockClientsDataStore,
+        domainDataStore,
         clock,
         ds,
         {
@@ -643,6 +661,7 @@ describe("User Pool Service", () => {
       });
       userPool = new UserPoolServiceImpl(
         mockClientsDataStore,
+        domainDataStore,
         clock,
         ds,
         options
@@ -663,6 +682,7 @@ describe("User Pool Service", () => {
       const ds = newMockDataStore();
       const userPool = new UserPoolServiceImpl(
         mockClientsDataStore,
+        domainDataStore,
         clock,
         ds,
         {
@@ -685,6 +705,7 @@ describe("User Pool Service", () => {
       const ds = newMockDataStore();
       const userPool = new UserPoolServiceImpl(
         mockClientsDataStore,
+        domainDataStore,
         clock,
         ds,
         {
@@ -706,6 +727,7 @@ describe("User Pool Service", () => {
       const ds = newMockDataStore();
       const userPool = new UserPoolServiceImpl(
         mockClientsDataStore,
+        domainDataStore,
         clock,
         ds,
         {
@@ -733,6 +755,7 @@ describe("User Pool Service", () => {
       const ds = newMockDataStore();
       const userPool = new UserPoolServiceImpl(
         mockClientsDataStore,
+        domainDataStore,
         clock,
         ds,
         {
@@ -756,6 +779,7 @@ describe("User Pool Service", () => {
       const ds = newMockDataStore();
       const userPool = new UserPoolServiceImpl(
         mockClientsDataStore,
+        domainDataStore,
         clock,
         ds,
         {
@@ -787,6 +811,7 @@ describe("User Pool Service", () => {
       const ds = newMockDataStore();
       const userPool = new UserPoolServiceImpl(
         mockClientsDataStore,
+        domainDataStore,
         clock,
         ds,
         {

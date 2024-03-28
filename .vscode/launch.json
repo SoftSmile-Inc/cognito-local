@@ -5,9 +5,9 @@
       "name": "CognitoLocal",
       "type": "node",
       "request": "launch",
-      "runtimeExecutable": "node",
-      "runtimeArgs": ["--nolazy", "-r", "ts-node/register/transpile-only"],
-      "args": ["src/bin/start.ts"],
+      "runtimeExecutable": "yarn",
+      //"runtimeArgs": ["--nolazy", "-r", "ts-node/register/transpile-only"],
+      "args": ["nodemon"],
       "skipFiles": ["<node_internals>/**", "node_modules/**"],
       "outputCapture": "std",
       "env": {

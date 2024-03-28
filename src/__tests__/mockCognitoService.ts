@@ -12,6 +12,8 @@ export const newMockCognitoService = (
   getUserPoolForClientId: jest.fn().mockResolvedValue(userPoolClient),
   listAppClients: jest.fn(),
   listUserPools: jest.fn(),
+  createDomain: jest.fn(),
+  getDomain: jest.fn(),
 });
 
 export const newMockCognitoServiceFactory = (

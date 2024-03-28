@@ -21,6 +21,12 @@ export class UserNotFoundError extends CognitoError {
   }
 }
 
+export class PoolNotFoundError extends CognitoError {
+  public constructor(message = "Pool not found.") {
+    super("PoolNotFoundError", message);
+  }
+}
+
 export class UsernameExistsError extends CognitoError {
   public constructor() {
     super("UsernameExistsException", "User already exists");
