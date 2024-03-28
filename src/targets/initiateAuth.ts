@@ -90,7 +90,7 @@ const verifyMfaChallenge = async (
   };
 };
 
-const verifyPasswordChallenge = async (
+export const verifyPasswordChallenge = async (
   ctx: Context,
   user: User,
   req: InitiateAuthRequest,

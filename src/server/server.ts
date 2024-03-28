@@ -1,6 +1,6 @@
-import bodyParser from "body-parser";
 import cors from "cors";
 import express from "express";
+import { engine } from "express-handlebars";
 import * as http from "http";
 import type { Logger } from "pino";
 import * as uuid from "uuid";
@@ -8,11 +8,32 @@ import { CognitoError, UnsupportedError } from "../errors";
 import { Router } from "./Router";
 import PublicKey from "../keys/cognitoLocal.public.json";
 import Pino from "pino-http";
+import path from "path";
+import { TokenRequestHandle } from "../targets/oauth2/tokenTarget";
 
 export interface ServerOptions {
   port: number;
   hostname: string;
   development: boolean;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+class Oauth2Error {
+  static invalid_request: Oauth2Error = new Oauth2Error("invalid_request");
+  static invalid_client: Oauth2Error = new Oauth2Error("invalid_client");
+  static invalid_grant: Oauth2Error = new Oauth2Error("invalid_grant");
+  static unauthorized_client: Oauth2Error = new Oauth2Error(
+    "unauthorized_client"
+  );
+  static unsupported_grant_type: Oauth2Error = new Oauth2Error(
+    "unsupported_grant_type"
+  );
+
+  public error: string;
+
+  private constructor(error: string) {
+    this.error = error;
+  }
 }
 
 export interface Server {
@@ -23,6 +44,7 @@ export interface Server {
 export const createServer = (
   router: Router,
   logger: Logger,
+  tokenRequestHandle: TokenRequestHandle,
   options: Partial<ServerOptions> = {}
 ): Server => {
   const pino = Pino({
@@ -38,16 +60,34 @@ export const createServer = (
 
   app.use(pino);
 
+  // eslint-disable-next-line @typescript-eslint/no-misused-promises
+  app.engine("handlebars", engine());
+  app.set("view engine", "handlebars");
+  const viewsDir = path.join(__dirname, "..", "./views");
+  app.set("views", viewsDir);
+
+  app.get("/", (req, res) => {
+    res.render("home");
+  });
+
   app.use(
     cors({
       origin: "*",
     })
   );
-  app.use(
-    bodyParser.json({
-      type: "application/x-amz-json-1.1",
-    })
-  );
+
+  const publicDir = path.join(__dirname, "..", "./public");
+  app.use(express.static(publicDir));
+
+  app.use(express.json({ type: "application/x-amz-json-1.1" }));
+  app.use(express.urlencoded({ extended: true }));
+
+  app.get("/", (req, res) => {
+    res.render("home");
+  });
+  app.post("/login", (req, res) => {
+    res.status(200).json({ ok: true });
+  });
 
   app.get("/:userPoolId/.well-known/jwks.json", (req, res) => {
     res.status(200).json({
@@ -56,6 +96,14 @@ export const createServer = (
   });
 
   app.get("/health", (req, res) => {
+    res.status(200).json({ ok: true });
+  });
+
+  app.post("/oauth2/token/:domain", (req, res) => {
+    /*tokenRequestHandle.tokenRequestHandle({ logger: req.log }, req.params.domain, req.body)
+      .then(token => {
+        res.status(200).json(token);
+      });*/
     res.status(200).json({ ok: true });
   });
 

@@ -105,52 +105,36 @@ export const AdminCreateUser =
   async (ctx, req) => {
     const userPool = await cognito.getUserPool(ctx, req.UserPoolId);
     const existingUser = await userPool.getUserByUsername(ctx, req.Username);
-    const supressWelcomeMessage = req.MessageAction === "SUPPRESS";
+    const suppressWelcomeMessage = req.MessageAction === "SUPPRESS";
+    const resendWelcomeMessage = req.MessageAction === "RESEND";
 
-    if (existingUser && req.MessageAction === "RESEND") {
-      throw new UnsupportedError("AdminCreateUser with MessageAction=RESEND");
-    } else if (existingUser) {
+    if (existingUser == null && resendWelcomeMessage) {
+      throw new UnsupportedError("User must exist with MessageAction=RESEND");
+    } else if (existingUser && !resendWelcomeMessage) {
       throw new UsernameExistsError();
     }
-
-    const attributes = attributesInclude("sub", req.UserAttributes)
-      ? req.UserAttributes ?? []
-      : [{ Name: "sub", Value: uuid.v4() }, ...(req.UserAttributes ?? [])];
-
     const now = clock.get();
 
-    const temporaryPassword =
-      req.TemporaryPassword ?? process.env.CODE ?? generator.new().slice(0, 6);
+    let user: User;
+    if (resendWelcomeMessage) {
+      const temporaryPassword =
+        req.TemporaryPassword ??
+        process.env.CODE ??
+        generator.new().slice(0, 6);
 
-    const isEmailUsername =
-      config.UserPoolDefaults.UsernameAttributes?.includes("email");
-    const hasEmailAttribute = attributesInclude("email", attributes);
-
-    if (isEmailUsername && !hasEmailAttribute) {
-      attributes.push({ Name: "email", Value: req.Username });
-    }
-
-    const user: User = {
-      Username: req.Username,
-      Password: temporaryPassword,
-      Attributes: attributes,
-      Enabled: true,
-      UserStatus: "FORCE_CHANGE_PASSWORD",
-      ConfirmationCode: undefined,
-      UserCreateDate: now,
-      UserLastModifiedDate: now,
-      RefreshTokens: [],
-    };
-    await userPool.saveUser(ctx, user);
-
-    // TODO: should throw InvalidParameterException when a non-email is supplied as the Username when the pool has email as a UsernameAttribute
-    // TODO: support MessageAction=="RESEND"
-    // TODO: should generate a TemporaryPassword if one isn't set
-    // TODO: support ForceAliasCreation
-    // TODO: support PreSignIn lambda and ValidationData
-
-    if (!supressWelcomeMessage) {
-      await deliverWelcomeMessage(
+      user = {
+        Username: existingUser!.Username,
+        Password: temporaryPassword,
+        Attributes: existingUser!.Attributes,
+        Enabled: existingUser!.Enabled,
+        UserStatus: "FORCE_CHANGE_PASSWORD",
+        ConfirmationCode: undefined,
+        UserCreateDate: existingUser!.UserCreateDate,
+        UserLastModifiedDate: now,
+        RefreshTokens: [],
+      };
+      await userPool.saveUser(ctx, user);
+      deliverWelcomeMessage(
         ctx,
         req,
         temporaryPassword,
@@ -158,7 +142,54 @@ export const AdminCreateUser =
         messages,
         userPool
       );
+    } else {
+      const attributes = attributesInclude("sub", req.UserAttributes)
+        ? req.UserAttributes ?? []
+        : [{ Name: "sub", Value: uuid.v4() }, ...(req.UserAttributes ?? [])];
+
+      const temporaryPassword =
+        req.TemporaryPassword ??
+        process.env.CODE ??
+        generator.new().slice(0, 6);
+
+      const isEmailUsername =
+        config.UserPoolDefaults.UsernameAttributes?.includes("email");
+      const hasEmailAttribute = attributesInclude("email", attributes);
+
+      if (isEmailUsername && !hasEmailAttribute) {
+        attributes.push({ Name: "email", Value: req.Username });
+      }
+
+      user = {
+        Username: req.Username,
+        Password: temporaryPassword,
+        Attributes: attributes,
+        Enabled: true,
+        UserStatus: "FORCE_CHANGE_PASSWORD",
+        ConfirmationCode: undefined,
+        UserCreateDate: now,
+        UserLastModifiedDate: now,
+        RefreshTokens: [],
+      };
+      await userPool.saveUser(ctx, user);
+
+      if (!suppressWelcomeMessage) {
+        await deliverWelcomeMessage(
+          ctx,
+          req,
+          temporaryPassword,
+          user,
+          messages,
+          userPool
+        );
+      }
     }
+
+    // TODO: should throw InvalidParameterException when a non-email is supplied as the Username when the pool has email as a UsernameAttribute
+    // TODO: support MessageAction=="RESEND"
+    // TODO: should generate a TemporaryPassword if one isn't set
+    // TODO: support ForceAliasCreation
+    // TODO: support PreSignIn lambda and ValidationData
 
     return {
       User: userToResponseObject(user),

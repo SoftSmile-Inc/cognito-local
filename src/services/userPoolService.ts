@@ -99,6 +99,19 @@ export interface User {
   RefreshTokens: string[];
 }
 
+export interface PoolDomain {
+  /**
+   * The domain string. For custom domains, this is the fully-qualified domain name, such
+   * as <c>auth.example.com</c>. For Amazon Cognito prefix domains, this is the prefix
+   * alone, such as <c>auth</c>.
+   */
+  Domain: string;
+  /**
+   * The user pool ID for the user pool.
+   */
+  UserPoolId: string;
+}
+
 export interface Group {
   /**
    * The name of the group.
@@ -142,6 +155,8 @@ export interface UserPoolService {
   addUserToGroup(ctx: Context, group: Group, user: User): Promise<void>;
   saveAppClient(ctx: Context, appClient: AppClient): Promise<void>;
   deleteAppClient(ctx: Context, appClient: AppClient): Promise<void>;
+  savePoolDomain(ctx: Context, poolDomain: PoolDomain): Promise<void>;
+  deletePoolDomain(ctx: Context, poolDomain: PoolDomain): Promise<void>;
   deleteGroup(ctx: Context, group: Group): Promise<void>;
   deleteUser(ctx: Context, user: User): Promise<void>;
   getGroupByGroupName(ctx: Context, groupName: string): Promise<Group | null>;
@@ -219,6 +234,29 @@ export class UserPoolServiceImpl implements UserPoolService {
       "UserPoolServiceImpl.deleteAppClient"
     );
     await this.clientsDataStore.delete(ctx, ["Clients", appClient.ClientId]);
+  }
+
+  public async savePoolDomain(
+    ctx: Context,
+    poolDomain: PoolDomain
+  ): Promise<void> {
+    ctx.logger.debug("UserPoolServiceImpl.savePoolDomain");
+    await this.clientsDataStore.set(
+      ctx,
+      ["Domains", poolDomain.Domain],
+      poolDomain
+    );
+  }
+
+  public async deletePoolDomain(
+    ctx: Context,
+    poolDomain: PoolDomain
+  ): Promise<void> {
+    ctx.logger.debug(
+      { clientId: poolDomain.Domain },
+      "UserPoolServiceImpl.deletePoolDomain"
+    );
+    await this.clientsDataStore.delete(ctx, ["Domains", poolDomain.Domain]);
   }
 
   public async deleteGroup(ctx: Context, group: Group): Promise<void> {

@@ -18,6 +18,7 @@ import { Router } from "./Router";
 import { loadConfig } from "./config";
 import { createServer, Server } from "./server";
 import { CryptoService } from "../services/crypto";
+import { TokenRequestHandle } from "../targets/oauth2/tokenTarget";
 
 export const createDefaultServer = async (
   logger: pino.Logger
@@ -81,6 +82,7 @@ export const createDefaultServer = async (
       triggers,
     }),
     logger,
+    new TokenRequestHandle(clock, cognitoClient),
     {
       development: !!process.env.COGNITO_LOCAL_DEVMODE,
     }

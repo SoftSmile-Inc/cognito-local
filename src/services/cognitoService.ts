@@ -15,6 +15,7 @@ import {
 import fs from "fs/promises";
 
 const CLIENTS_DATABASE_NAME = "clients";
+const DOMAINS_DATABASE_NAME = "domains";
 
 // These defaults were pulled from Cognito on 2021-11-26 by creating a new User Pool with only a Name and
 // capturing what defaults Cognito set on the pool.
@@ -286,6 +287,7 @@ export interface CognitoServiceFactory {
 export class CognitoServiceImpl implements CognitoService {
   private readonly clients: DataStore;
   private readonly clock: Clock;
+  private readonly domains: DataStore;
   private readonly userPoolServiceFactory: UserPoolServiceFactory;
   private readonly dataDirectory: string;
   private readonly userPoolDefaultConfig: UserPoolDefaults;
@@ -293,11 +295,13 @@ export class CognitoServiceImpl implements CognitoService {
   public constructor(
     dataDirectory: string,
     clients: DataStore,
+    domains: DataStore,
     clock: Clock,
     userPoolDefaultConfig: UserPoolDefaults,
     userPoolServiceFactory: UserPoolServiceFactory
   ) {
     this.clients = clients;
+    this.domains = domains;
     this.clock = clock;
     this.dataDirectory = dataDirectory;
     this.userPoolDefaultConfig = userPoolDefaultConfig;
@@ -436,10 +440,16 @@ export class CognitoServiceFactoryImpl implements CognitoServiceFactory {
       CLIENTS_DATABASE_NAME,
       { Clients: {} }
     );
+    const domains = await this.dataStoreFactory.create(
+      ctx,
+      CLIENTS_DATABASE_NAME,
+      { Clients: {} }
+    );
 
     return new CognitoServiceImpl(
       this.dataDirectory,
       clients,
+      domains,
       this.clock,
       userPoolDefaultConfig,
       this.userPoolServiceFactory
